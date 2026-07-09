@@ -8,3 +8,10 @@ test_HEp2/
 plots/
 visuals/
 checkpoints/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+__MACOSX/
+._*

@@ -1,0 +1,16 @@
+nohup python running_files/baseline_hep2.py \
+    --model pix2pix \
+    --is_train True \
+    --cuda True \
+    --gpu_ids 0 \
+    --cuda_index 0 \
+    --dataroot /user/apoli/GenSeg/data/HEp-2_specimen \
+    --amp \
+    --init_type xavier \
+    --n_epochs 10 \
+    --classes 1 \
+    --output_nc 1 \
+    --input_nc 1 \
+    --batch_size 32 \
+    --seg_model unet \
+    --unet_learning_rate 1e-4

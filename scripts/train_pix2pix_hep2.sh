@@ -1,0 +1,14 @@
+nohup python running_files/train_pix2pix_hep2.py \
+    --model pix2pix \
+    --is_train True \
+    --cuda True \
+    --gpu_ids 0 \
+    --cuda_index 0 \
+    --dataroot /user/apoli/GenSeg/data/HEp-2_specimen \
+    --amp \
+    --n_epochs 50 \
+    --init_type kaiming \
+    --lr 2e-5 \
+    --output_nc 1 \
+    --input_nc 1 \
+    --batch_size 32 \

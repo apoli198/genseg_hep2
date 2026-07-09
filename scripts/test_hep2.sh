@@ -1,0 +1,14 @@
+nohup python running_files/test_hep2.py \
+    --model pix2pix  \
+    --is_train True \
+    --cuda True \
+    --gpu_ids 0 \
+    --cuda_index 0 \
+    --dataroot /user/apoli/GenSeg/data/HEp-2_specimen \
+    --amp \
+    --classes 1 \
+    --output_nc 1 \
+    --input_nc 1 \
+    --batch_size 1 \
+    --seg_model unet \
+    --model_dir /user/apoli/GenSeg/end2end_HEp2_model/

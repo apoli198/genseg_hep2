@@ -1,97 +1,287 @@
-# GenSeg-HEp2 — GAN-based Data Augmentation for Low-Data HEp-2 Cell Segmentation
+# GenSeg-HEp2
 
-Pipeline per la segmentazione di specimen HEp-2 (immunofluorescenza) in regime di dati scarsi. Un generatore pix2pix, la cui architettura è ricercata tramite NAS differenziabile bilivello (libreria `betty-ml`), genera coppie immagine-maschera sintetiche usate per aumentare l'addestramento di una UNet di segmentazione. È incluso un baseline (UNet senza augmentation) per il confronto.
+GAN-based data augmentation pipeline for low-data HEp-2 cell segmentation using Neural Architecture Search and U-Net.
 
-## Requisiti
+> **Academic context**
+>
+> This repository contains the source code developed for my Master's thesis in Biomedical Engineering. The project investigates the use of synthetic data generation to improve semantic segmentation performance when only a limited number of annotated medical images are available.
 
-Python 3.9, PyTorch 1.13.1, CUDA 11.6.
+---
+
+# Overview
+
+Accurate segmentation of HEp-2 cell specimens is an important step in computer-aided diagnosis for autoimmune diseases. However, collecting and manually annotating biomedical images is expensive and time-consuming, making the available datasets relatively small.
+
+GenSeg-HEp2 proposes a complete deep learning pipeline that addresses this limitation through synthetic data generation.
+
+The proposed workflow consists of:
+
+1. preprocessing the original HEp-2 dataset;
+2. training a pix2pix conditional GAN;
+3. optimizing the generator architecture through differentiable Neural Architecture Search (NAS);
+4. generating synthetic image-mask pairs;
+5. augmenting the segmentation dataset;
+6. training a U-Net segmentation model;
+7. comparing the proposed method against a baseline trained without synthetic augmentation.
+
+---
+
+# Objectives
+
+The main goals of the project are:
+
+- investigate GAN-based data augmentation for medical image segmentation;
+- optimize the GAN generator using differentiable NAS;
+- evaluate the impact of synthetic samples on segmentation performance;
+- compare the proposed approach against a standard U-Net baseline.
+
+---
+
+# Repository Structure
+
+```
+architecture_pix2pix/     Differentiable NAS primitives
+models_pix2pix/           pix2pix implementation
+options/                  Training configuration
+running_files/            Training and evaluation entry points
+scripts/                  Bash scripts for experiments
+unet/                     Segmentation network
+util/                     Dataset preparation and utilities
+
+data/                     Dataset (not included)
+plots/                    Training curves
+visuals/                  Generated samples
+test_HEp2/                Evaluation outputs
+```
+
+---
+
+# Project Workflow
+
+The complete pipeline consists of several stages.
+
+## 1. Dataset preparation
+
+The original HEp-2 images are divided into fixed-size patches.
+
+Cross-validation folds are then generated while preserving patient distribution and intensity classes.
+
+Additional metadata files are automatically created for training and testing.
+
+---
+
+## 2. GAN pre-training
+
+A conditional pix2pix model is trained to learn the mapping between HEp-2 images and segmentation masks.
+
+The resulting generator serves as the starting point for the optimization stage.
+
+---
+
+## 3. Neural Architecture Search
+
+Instead of using a fixed generator architecture, convolutional blocks are optimized through differentiable Neural Architecture Search.
+
+Candidate operations are combined using learnable architecture parameters that are jointly optimized during training.
+
+---
+
+## 4. Synthetic data generation
+
+The optimized generator produces realistic synthetic image-mask pairs.
+
+These synthetic samples are used to increase the diversity of the available training data.
+
+---
+
+## 5. Segmentation training
+
+A U-Net model is trained using the augmented dataset.
+
+For comparison, an additional baseline U-Net is trained using only real images.
+
+---
+
+## 6. Evaluation
+
+The trained models are evaluated on the test set using segmentation metrics such as Dice Score.
+
+Training statistics, generated samples and qualitative visualizations are also produced.
+
+---
+
+# Technologies
+
+- Python 3.9
+- PyTorch
+- CUDA
+- pix2pix
+- U-Net
+- Differentiable Neural Architecture Search
+- Betty-ML
+- NumPy
+- OpenCV
+
+---
+
+# Requirements
+
+- Python 3.9
+- PyTorch 1.13.1
+- CUDA 11.6
+
+Environment creation:
 
 ```bash
 bash env.sh
 conda activate GenSeg
 ```
 
-## Struttura del dataset
+---
+
+# Dataset Preparation
+
+The repository expects the HEp-2 dataset to follow the structure below.
 
 ```
-data/HEp-2_specimen/
-├── train/
-│   ├── 00001_p0.tif
-│   ├── 00001_p0_Mask.tif
-│   └── ...
-├── test/
-│   ├── 00001_p0_Mask.tif
-│   └── ...
-├── train.csv   # ID paziente, intensity
-└── test.csv
+data/
+└── HEp-2_specimen/
+    ├── train/
+    ├── test/
+    ├── train.csv
+    └── test.csv
 ```
 
-## Preparazione dati
+The dataset itself is **not included** in this repository.
 
-1. Crea le patch (256x256, griglia fissa 6x5) da train e test:
+Before training, execute:
+
 ```bash
 python util/create_patches.py
-```
-Il file usa path hardcoded (`images_folder`, `patches_folder`); per il test set adattare lo script o duplicarlo puntando a `data/HEp-2_specimen/test`.
-
-2. Crea gli split di cross-validation (5 fold, stratificati per intensity/paziente):
-```bash
 python util/create_fold_splits.py
-```
-Genera `train_folds.csv`, richiesto da `util/HEp2_loader.py`.
-
-3. Crea l'indice delle patch di test:
-```bash
 python util/create_test_indices.py
 ```
-Genera `test_indices.csv`, richiesto per la ricostruzione della maschera intera in fase di test.
 
-## Training e testing
+These scripts generate:
 
-Tutti gli script sotto eseguono 5 fold in subprocess separati (`running_files/*_fold.py`) e aggregano le metriche a fine esecuzione.
+- image patches
+- cross-validation splits
+- test indices
+
+required by the training pipeline.
+
+---
+
+# Training
+
+The complete experimental pipeline consists of four stages.
+
+### Train pix2pix
 
 ```bash
-# 1. Pre-training del generatore/discriminatore pix2pix
 bash scripts/train_pix2pix_hep2.sh
+```
 
-# 2. Co-training bilivello: NAS del generatore + UNet di segmentazione
+---
+
+### Train the proposed NAS-based approach
+
+```bash
 bash scripts/train_end2end_hep2.sh
+```
 
-# 3. Baseline: UNet senza augmentation
+---
+
+### Train the baseline
+
+```bash
 bash scripts/baseline_hep2.sh
+```
 
-# 4. Inferenza sul test set (Dice score + accuracy)
+---
+
+### Evaluate the models
+
+```bash
 bash scripts/test_hep2.sh
 ```
 
-Lo step 2 richiede i pesi pix2pix salvati dallo step 1 in `./pix2pix_HEp2_model/pix2pix-HEp2-fold{N}`.
-Lo step 4 legge il modello da `--model_dir` (impostare al path del run baseline o end2end che si vuole valutare).
+---
 
-## Output
+# Outputs
 
-```
-pix2pix_HEp2_model/pix2pix-HEp2-fold{N}/       # pesi G/D pix2pix per fold
-end2end_HEp2_model/end2end-HEp2-unet-fold{N}/  # pesi UNet (best + final) per fold
-plots/{pix2pix,end2end,baseline}/              # curve di loss
-visuals/{pix2pix,end2end}/                     # confronti immagini reali/generate
-test_HEp2/test-HEp2-fold{N}/                   # metriche e visualizzazioni di test
-```
+The repository automatically generates:
 
-## Architettura NAS del generatore
+- trained pix2pix models
+- trained U-Net models
+- loss curves
+- generated images
+- qualitative visualizations
+- quantitative evaluation metrics
 
-`models_pix2pix/networks.py` (`MixedOp_conv`/`MixedOp_upconv`) sostituisce ogni convoluzione della UNet-generator con una combinazione pesata (softmax) delle primitive definite in `architecture_pix2pix/genotypes.py` (kernel 4x2x1, 6x2x2, 8x2x3). I pesi architetturali (`conv_arch`, `upconv_arch`) sono ottimizzati come parametro separato nel loop bilivello (problema `Arch` in `train_end2end_hep2_fold.py`), non fissati a priori.
+---
 
-## Struttura repository
+# Known Limitations
 
-```
-running_files/   # entrypoint + fold worker per pix2pix, end2end, baseline, test
-scripts/         # wrapper bash con gli iperparametri
-options/         # parsing CLI (base_options.py, train_options.py)
-models_pix2pix/  # pix2pix_model.py, base_model.py, networks.py
-architecture_pix2pix/  # primitive e genotipi NAS
-unet/            # modello di segmentazione
-util/HEp2_loader.py, dice_score.py, util.py, create_patches.py,
-     create_fold_splits.py, create_test_indices.py
-cuda.py          # check ambiente CUDA (diagnostica manuale)
-check_masks.py   # QC delle maschere generate da create_patches.py
-```
+Some utility scripts currently contain hardcoded dataset paths.
+
+These paths may need to be adapted before running the pipeline on a different machine.
+
+The repository also assumes the availability of CUDA-compatible hardware for training.
+
+---
+
+# Missing Resources
+
+The following resources are intentionally not distributed:
+
+- HEp-2 dataset
+- trained model checkpoints
+- generated experimental results
+
+Users should generate these files by executing the training pipeline.
+
+---
+
+# Possible Issues
+
+Common issues include:
+
+- incorrect dataset directory structure;
+- missing metadata files generated during preprocessing;
+- unavailable CUDA environment;
+- incorrect model checkpoint paths during evaluation.
+
+Most execution errors are caused by one of the above configuration problems.
+
+---
+
+# Contributors
+
+This project was developed by:
+
+- Alessandro Poli
+
+**Supervisor**
+
+- [TODO]
+
+**Co-supervisor**
+
+- [TODO]
+
+---
+
+# Academic Context
+
+This project was developed as part of my Master's Thesis in Biomedical Engineering.
+
+The objective was to investigate whether GAN-generated synthetic biomedical images, combined with differentiable Neural Architecture Search, could improve semantic segmentation performance under low-data conditions.
+
+---
+
+# License
+
+This repository is released for academic and research purposes.
+
+Please refer to the LICENSE file, if available.

@@ -256,32 +256,8 @@ Most execution errors are caused by one of the above configuration problems.
 
 ---
 
-# Contributors
-
-This project was developed by:
-
-- Alessandro Poli
-
-**Supervisor**
-
-- [TODO]
-
-**Co-supervisor**
-
-- [TODO]
-
----
-
 # Academic Context
 
 This project was developed as part of my Master's Thesis in Biomedical Engineering.
 
 The objective was to investigate whether GAN-generated synthetic biomedical images, combined with differentiable Neural Architecture Search, could improve semantic segmentation performance under low-data conditions.
-
----
-
-# License
-
-This repository is released for academic and research purposes.
-
-Please refer to the LICENSE file, if available.

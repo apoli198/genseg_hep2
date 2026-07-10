@@ -4,7 +4,7 @@ GAN-based data augmentation pipeline for low-data HEp-2 cell segmentation using 
 
 > **Academic context**
 >
-> This repository contains the source code developed for my Master's thesis in Biomedical Engineering. The project investigates the use of synthetic data generation to improve semantic segmentation performance when only a limited number of annotated medical images are available.
+> This repository contains the source code developed for my Master's thesis in Information Engineering for Digital Medicine. The project investigates the use of synthetic data generation to improve semantic segmentation performance when only a limited number of annotated medical images are available.
 
 ---
 
